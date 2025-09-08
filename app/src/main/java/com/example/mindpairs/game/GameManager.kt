@@ -6,6 +6,7 @@ import com.example.mindpairs.model.GameState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel // Added import
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -153,6 +154,6 @@ class GameManager {
 
     // Clean up resources when GameManager is no longer needed
     fun cleanup() {
-        gameScope.coroutineContext[SupervisorJob]?.cancel()
+        gameScope.cancel() // Corrected way to cancel the scope
     }
 }
