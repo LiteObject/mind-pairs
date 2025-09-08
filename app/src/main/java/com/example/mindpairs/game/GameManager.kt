@@ -1,6 +1,5 @@
 package com.example.mindpairs.game
 
-import com.example.mindpairs.data.UserPreferencesRepository
 import com.example.mindpairs.model.Card
 import com.example.mindpairs.model.GameDifficulty
 import com.example.mindpairs.model.GameState
@@ -10,14 +9,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-class GameManager(
-    private val userPreferencesRepository: UserPreferencesRepository,
-    private val coroutineScope: CoroutineScope
-) {
-    private val _gameState = MutableStateFlow(GameState()) // Initial default state
+class GameManager {
+    private val _gameState = MutableStateFlow(GameState())
     val gameState: StateFlow<GameState> = _gameState.asStateFlow()
 
     // Nostalgic themed images for older adults
@@ -26,43 +21,6 @@ class GameManager(
         "🚗", "📻", "☎️", "📷", "🎵", "🏠", "⭐", "🌙",
         "🎂", "☕", "🍯", "🕊️"
     )
-
-    init {
-        coroutineScope.launch {
-            val initialDifficulty = userPreferencesRepository.difficultyPreferenceFlow.first()
-            // Initialize with the loaded preference. If _gameState is already populated
-            // by a preserved GameManager instance, this might restart it.
-            // For a typical setup where GameManager is tied to Activity/ViewModel lifecycle,
-            // this is fine.
-            if (_gameState.value.cards.isEmpty()) { // Load initial game only if not already set up
-                 loadInitialGameWithPreference(initialDifficulty)
-            }
-        }
-    }
-
-    // Renamed to avoid confusion with the public startNewGame that users can trigger
-    private fun loadInitialGameWithPreference(difficulty: GameDifficulty) {
-        val totalCards = difficulty.gridSize.first * difficulty.gridSize.second
-        val pairs = totalCards / 2
-
-        val selectedImages = cardImages.take(pairs)
-        val cardPairs = selectedImages.flatMap { image ->
-            listOf(
-                Card(id = selectedImages.indexOf(image) * 2, imageRes = image),
-                Card(id = selectedImages.indexOf(image) * 2 + 1, imageRes = image)
-            )
-        }.shuffled()
-
-        // Preserve best score if it exists from a previous session (via _gameState initial value)
-        val currentBestScore = _gameState.value.bestScore 
-
-        _gameState.value = GameState(
-            cards = cardPairs,
-            difficulty = difficulty,
-            bestScore = currentBestScore // Preserve best score across preference loads
-        )
-        // No need to save preference here as this is just loading it.
-    }
 
     fun startNewGame(difficulty: GameDifficulty) {
         val totalCards = difficulty.gridSize.first * difficulty.gridSize.second
@@ -75,19 +33,12 @@ class GameManager(
                 Card(id = selectedImages.indexOf(image) * 2 + 1, imageRes = image)
             )
         }.shuffled()
-        
-        // Preserve best score from the current state
-        val currentBestScore = _gameState.value.bestScore
 
         _gameState.value = GameState(
             cards = cardPairs,
             difficulty = difficulty,
-            bestScore = currentBestScore // Ensure bestScore isn't reset on difficulty change
+            bestScore = _gameState.value.bestScore
         )
-
-        coroutineScope.launch {
-            userPreferencesRepository.saveDifficultyPreference(difficulty)
-        }
     }
 
     fun flipCard(cardId: Int) {
@@ -125,13 +76,24 @@ class GameManager(
         val newMoves = currentState.moves + 1
 
         if (isMatch) {
-            val updatedCards = currentState.cards.map {
-                if (flippedCards.any { fc -> fc.id == it.id }) it.copy(isMatched = true, isFlipped = true) else it
+            // Cards match - mark them as matched
+            val updatedCards = currentState.cards.map { card ->
+                if (flippedCards.any { it.id == card.id }) {
+                    card.copy(isMatched = true, isFlipped = true)
+                } else {
+                    card
+                }
             }
+
             val newMatchedPairs = currentState.matchedPairs + 1
             val totalPairs = currentState.difficulty.gridSize.first * currentState.difficulty.gridSize.second / 2
             val isGameComplete = newMatchedPairs == totalPairs
-            val newBestScore = if (isGameComplete && newMoves < currentState.bestScore) newMoves else currentState.bestScore
+
+            val newBestScore = if (isGameComplete && newMoves < currentState.bestScore) {
+                newMoves
+            } else {
+                currentState.bestScore
+            }
 
             _gameState.value = currentState.copy(
                 cards = updatedCards,
@@ -142,11 +104,18 @@ class GameManager(
                 bestScore = newBestScore
             )
         } else {
-            coroutineScope.launch {
-                delay(1000)
-                val updatedCards = currentState.cards.map {
-                    if (flippedCards.any { fc -> fc.id == it.id }) it.copy(isFlipped = false) else it
+            // Cards don't match - flip them back after a delay
+            CoroutineScope(Dispatchers.Main).launch {
+                delay(1000) // Show cards for 1 second
+
+                val updatedCards = currentState.cards.map { card ->
+                    if (flippedCards.any { it.id == card.id }) {
+                        card.copy(isFlipped = false)
+                    } else {
+                        card
+                    }
                 }
+
                 _gameState.value = _gameState.value.copy(
                     cards = updatedCards,
                     flippedCards = emptyList(),

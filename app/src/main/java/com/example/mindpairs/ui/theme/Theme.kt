@@ -18,12 +18,12 @@ import androidx.core.view.WindowCompat
 
 // Accessible color schemes for older adults
 private val DarkColorScheme = darkColorScheme(
-    primary = WarmBlue,
+    primary = Teal200,
     secondary = SoftGreen,
     tertiary = WarmOrange,
     background = Color(0xFF121212),
     surface = Color(0xFF1E1E1E),
-    onPrimary = Color.White,
+    onPrimary = Color.Black,
     onSecondary = Color.White,
     onTertiary = Color.White,
     onBackground = Color.White,
@@ -31,7 +31,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
+    primary = Teal700,
     secondary = SoftGreen,
     tertiary = WarmOrange,
     background = Color(0xFFFFFBFE),
@@ -41,7 +41,7 @@ private val LightColorScheme = lightColorScheme(
     onTertiary = Color.White,
     onBackground = HighContrastText,
     onSurface = HighContrastText,
-    primaryContainer = Color(0xFFE3F2FD),
+    primaryContainer = Teal200,
     secondaryContainer = Color(0xFFE8F5E8),
     tertiaryContainer = Color(0xFFFFF3E0)
 )

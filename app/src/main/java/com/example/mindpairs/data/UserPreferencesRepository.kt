@@ -25,8 +25,7 @@ class UserPreferencesRepository(private val context: Context) {
             try {
                 GameDifficulty.valueOf(difficultyName)
             } catch (e: IllegalArgumentException) {
-                // Fallback to MEDIUM if the saved value is invalid
-                GameDifficulty.MEDIUM
+                GameDifficulty.MEDIUM // Default fallback
             }
         }
 
