@@ -42,7 +42,7 @@ A cognitive exercise Android app designed specifically for older adults to impro
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/mind-pairs.git
+   git clone https://github.com/LiteObject/mind-pairs.git
    ```
 
 2. Open the project in Android Studio
@@ -110,12 +110,6 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Designed with input from cognitive health specialists
-- Tested with older adult focus groups
-- Icons and imagery selected for nostalgia and familiarity
 
 ---
 
