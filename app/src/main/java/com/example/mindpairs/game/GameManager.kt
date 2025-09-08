@@ -5,6 +5,7 @@ import com.example.mindpairs.model.GameDifficulty
 import com.example.mindpairs.model.GameState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +15,9 @@ import kotlinx.coroutines.launch
 class GameManager {
     private val _gameState = MutableStateFlow(GameState())
     val gameState: StateFlow<GameState> = _gameState.asStateFlow()
+
+    // Proper coroutine scope with SupervisorJob for better lifecycle management
+    private val gameScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     // Nostalgic themed images for older adults
     private val cardImages = listOf(
@@ -27,10 +31,11 @@ class GameManager {
         val pairs = totalCards / 2
 
         val selectedImages = cardImages.take(pairs)
-        val cardPairs = selectedImages.flatMap { image ->
+        // More efficient card creation with proper ID generation
+        val cardPairs = selectedImages.flatMapIndexed { index, image ->
             listOf(
-                Card(id = selectedImages.indexOf(image) * 2, imageRes = image),
-                Card(id = selectedImages.indexOf(image) * 2 + 1, imageRes = image)
+                Card(id = index * 2, imageRes = image),
+                Card(id = index * 2 + 1, imageRes = image)
             )
         }.shuffled()
 
@@ -76,56 +81,78 @@ class GameManager {
         val newMoves = currentState.moves + 1
 
         if (isMatch) {
-            // Cards match - mark them as matched
-            val updatedCards = currentState.cards.map { card ->
+            handleMatch(currentState, flippedCards, newMoves)
+        } else {
+            handleMismatch(currentState, flippedCards, newMoves)
+        }
+    }
+
+    private fun handleMatch(
+        currentState: GameState,
+        flippedCards: List<Card>,
+        newMoves: Int
+    ) {
+        val updatedCards = currentState.cards.map { card ->
+            if (flippedCards.any { it.id == card.id }) {
+                card.copy(isMatched = true, isFlipped = true)
+            } else {
+                card
+            }
+        }
+
+        val newMatchedPairs = currentState.matchedPairs + 1
+        val totalPairs = currentState.difficulty.gridSize.first * currentState.difficulty.gridSize.second / 2
+        val isGameComplete = newMatchedPairs == totalPairs
+
+        val newBestScore = if (isGameComplete && newMoves < currentState.bestScore) {
+            newMoves
+        } else {
+            currentState.bestScore
+        }
+
+        _gameState.value = currentState.copy(
+            cards = updatedCards,
+            flippedCards = emptyList(),
+            matchedPairs = newMatchedPairs,
+            moves = newMoves,
+            isGameComplete = isGameComplete,
+            bestScore = newBestScore
+        )
+    }
+
+    private fun handleMismatch(
+        currentState: GameState,
+        flippedCards: List<Card>,
+        newMoves: Int
+    ) {
+        // Use the proper game scope instead of creating new CoroutineScope
+        gameScope.launch {
+            delay(1000) // Show cards for 1 second
+
+            // Safely get the current state again after delay
+            val latestState = _gameState.value
+            val updatedCards = latestState.cards.map { card ->
                 if (flippedCards.any { it.id == card.id }) {
-                    card.copy(isMatched = true, isFlipped = true)
+                    card.copy(isFlipped = false)
                 } else {
                     card
                 }
             }
 
-            val newMatchedPairs = currentState.matchedPairs + 1
-            val totalPairs = currentState.difficulty.gridSize.first * currentState.difficulty.gridSize.second / 2
-            val isGameComplete = newMatchedPairs == totalPairs
-
-            val newBestScore = if (isGameComplete && newMoves < currentState.bestScore) {
-                newMoves
-            } else {
-                currentState.bestScore
-            }
-
-            _gameState.value = currentState.copy(
+            _gameState.value = latestState.copy(
                 cards = updatedCards,
                 flippedCards = emptyList(),
-                matchedPairs = newMatchedPairs,
-                moves = newMoves,
-                isGameComplete = isGameComplete,
-                bestScore = newBestScore
+                moves = newMoves
             )
-        } else {
-            // Cards don't match - flip them back after a delay
-            CoroutineScope(Dispatchers.Main).launch {
-                delay(1000) // Show cards for 1 second
-
-                val updatedCards = currentState.cards.map { card ->
-                    if (flippedCards.any { it.id == card.id }) {
-                        card.copy(isFlipped = false)
-                    } else {
-                        card
-                    }
-                }
-
-                _gameState.value = _gameState.value.copy(
-                    cards = updatedCards,
-                    flippedCards = emptyList(),
-                    moves = newMoves
-                )
-            }
         }
     }
 
     fun resetGame() {
         startNewGame(_gameState.value.difficulty)
+    }
+
+    // Clean up resources when GameManager is no longer needed
+    fun cleanup() {
+        gameScope.coroutineContext[SupervisorJob]?.cancel()
     }
 }

@@ -1,139 +1,160 @@
 package com.example.mindpairs.ui.screens
 
-import android.annotation.SuppressLint
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.* // Includes statusBarsPadding, IntrinsicSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mindpairs.game.GameManager
 import com.example.mindpairs.model.GameDifficulty
 import com.example.mindpairs.ui.components.MemoryCard
-import kotlin.math.min
 
-@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun GameScreen(
     gameManager: GameManager,
     modifier: Modifier = Modifier
 ) {
     val gameState by gameManager.gameState.collectAsState()
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
 
-    // Removed LaunchedEffect that was forcing MEDIUM difficulty
+    LaunchedEffect(Unit) {
+        gameManager.startNewGame(GameDifficulty.MEDIUM)
+    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .statusBarsPadding() 
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Game Header
         Text(
             text = "Memory Match-Up",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 8.dp)
         )
 
+        // Difficulty Selection
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
+                .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             GameDifficulty.entries.forEach { difficulty ->
                 FilterChip(
                     onClick = { gameManager.startNewGame(difficulty) },
-                    label = { Text(text = difficulty.displayName, fontSize = 12.sp) },
+                    label = {
+                        Text(
+                            text = difficulty.displayName,
+                            fontSize = 12.sp
+                        )
+                    },
                     selected = gameState.difficulty == difficulty,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
             }
         }
 
+        // Game Stats
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(IntrinsicSize.Min), 
+                .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            StatCard(label = "Moves", value = "${gameState.moves}", modifier = Modifier.weight(1f).fillMaxHeight())
-            StatCard(label = "Pairs Found", value = "${gameState.matchedPairs}", modifier = Modifier.weight(1f).fillMaxHeight())
+            StatCard(
+                title = "Moves",
+                value = gameState.moves.toString(),
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+
+            StatCard(
+                title = "Pairs Found",
+                value = gameState.matchedPairs.toString(),
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+
             if (gameState.bestScore != Int.MAX_VALUE) {
-                StatCard(label = "Best Score", value = "${gameState.bestScore}", modifier = Modifier.weight(1f).fillMaxHeight(), isTertiary = true)
+                StatCard(
+                    title = "Best Score",
+                    value = gameState.bestScore.toString(),
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                )
             }
         }
 
+        // Calculate available space for grid
+        val headerAndStatsHeight = 220.dp
+        val availableGridHeight = screenHeight - headerAndStatsHeight
+
+        val gridRows = when (gameState.difficulty) {
+            GameDifficulty.EASY -> 3
+            GameDifficulty.MEDIUM -> 4
+            GameDifficulty.HARD -> 5
+        }
+
+        val spacing = 8.dp
+        val totalSpacing = spacing * (gridRows + 1)
+        val maxCardHeight = (availableGridHeight - totalSpacing) / gridRows
+
+        // Game Grid with responsive sizing
         BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            val gridRows = when (gameState.difficulty) {
-                GameDifficulty.EASY -> 3
-                GameDifficulty.MEDIUM -> 4
-                GameDifficulty.HARD -> 5
-            }
-            val columnCount = gameState.difficulty.gridSize.first
-            val spacing = 8.dp
-            val cardAspectRatio = 0.75f
-
-            val totalVerticalSpacing = spacing * (gridRows + 1)
-            val heightFromVerticalConstraint = (this.maxHeight - totalVerticalSpacing) / gridRows
-
-            val totalHorizontalSpacing = spacing * (columnCount + 1)
-            val cellWidth = (this.maxWidth - totalHorizontalSpacing) / columnCount
-            val heightFromHorizontalConstraint = cellWidth / cardAspectRatio
-
-            val finalCardHeight = min(heightFromVerticalConstraint.value, heightFromHorizontalConstraint.value).dp
+            val gridHeight = minOf(availableGridHeight, maxHeight)
 
             LazyVerticalGrid(
-                columns = GridCells.Fixed(columnCount),
-                contentPadding = PaddingValues(spacing),
-                verticalArrangement = Arrangement.spacedBy(spacing),
-                horizontalArrangement = Arrangement.spacedBy(spacing),
+                columns = GridCells.Fixed(gameState.difficulty.gridSize.first),
+                contentPadding = PaddingValues(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(this.maxHeight)
+                    .height(gridHeight)
             ) {
                 items(gameState.cards) { card ->
                     MemoryCard(
                         card = card,
-                        onCardClick = { cardId -> gameManager.flipCard(cardId) },
+                        onCardClick = { cardId ->
+                            gameManager.flipCard(cardId)
+                        },
                         modifier = Modifier
-                            .height(finalCardHeight.coerceAtMost(120.dp))
-                            .aspectRatio(cardAspectRatio)
+                            .height(maxCardHeight.coerceAtMost(120.dp))
                     )
                 }
             }
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+        // Control Buttons
+        Button(
+            onClick = { gameManager.resetGame() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+                .height(48.dp)
         ) {
-            Button(
-                onClick = { gameManager.resetGame() },
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 8.dp)
-                    .height(48.dp)
-            ) {
-                Text(text = "New Game", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-            }
+            Text(
+                text = "New Game",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
 
+        // Game Complete Dialog
         if (gameState.isGameComplete) {
             GameCompleteDialog(
                 moves = gameState.moves,
@@ -145,46 +166,57 @@ fun GameScreen(
 }
 
 @Composable
-private fun StatCard(label: String, value: String, modifier: Modifier = Modifier, isTertiary: Boolean = false) {
+private fun StatCard(
+    title: String,
+    value: String,
+    containerColor: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
+) {
     Card(
-        modifier = modifier.padding(4.dp), 
-        colors = CardDefaults.cardColors(
-            containerColor = if (isTertiary) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer
-        )
+        modifier = modifier
+            .weight(1f)
+            .padding(4.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth() 
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center 
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = label, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            Text(
+                text = title,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
             Text(
                 text = value,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isTertiary) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
 }
 
 @Composable
-private fun GameCompleteDialog(moves: Int, isNewBestScore: Boolean, onPlayAgain: () -> Unit) {
+private fun GameCompleteDialog(
+    moves: Int,
+    isNewBestScore: Boolean,
+    onPlayAgain: () -> Unit
+) {
     AlertDialog(
-        onDismissRequest = { /* Prevent dismissal by clicking outside */ },
+        onDismissRequest = { },
         title = {
             Text(
                 text = "Congratulations! 🎉",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
+                textAlign = TextAlign.Center
             )
         },
         text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(
                     text = "You completed the game in $moves moves!",
                     fontSize = 18.sp,
@@ -203,7 +235,7 @@ private fun GameCompleteDialog(moves: Int, isNewBestScore: Boolean, onPlayAgain:
             }
         },
         confirmButton = {
-            Button(onClick = onPlayAgain, modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = onPlayAgain) {
                 Text("Play Again")
             }
         }
