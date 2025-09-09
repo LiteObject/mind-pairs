@@ -28,31 +28,25 @@ fun GameScreen(
 ) {
     val gameState by gameManager.gameState.collectAsState()
 
-    // LaunchedEffect that forced MEDIUM difficulty has been removed.
-    // GameManager now handles loading initial difficulty from DataStore.
-
     Column(
         modifier = modifier
             .fillMaxSize()
-            .statusBarsPadding() // Ensures content is below status bar
-            .padding(16.dp), // Overall padding for the screen content
+            .statusBarsPadding()
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp) // Consistent spacing for direct children
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Game Header
         Text(
             text = "Memory Match-Up",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
-            // Removed individual padding, handled by Column's verticalArrangement
         )
 
-        // Difficulty Selection
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()), // Makes difficulty chips scrollable
+                .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             GameDifficulty.entries.forEach { difficulty ->
@@ -65,11 +59,10 @@ fun GameScreen(
             }
         }
 
-        // Game Stats Row - Modified for consistent height
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(IntrinsicSize.Min), // All StatCards will have the same height
+                .height(IntrinsicSize.Min),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             StatCard(label = "Moves", value = "${gameState.moves}", modifier = Modifier.weight(1f).fillMaxHeight())
@@ -79,31 +72,27 @@ fun GameScreen(
             }
         }
 
-        // Game Grid with responsive sizing
         BoxWithConstraints(
             modifier = Modifier
-                .weight(1f) // Takes up remaining vertical space
+                .weight(1f)
                 .fillMaxWidth()
         ) {
             val gridRows = when (gameState.difficulty) {
                 GameDifficulty.EASY -> 3
                 GameDifficulty.MEDIUM -> 4
-                GameDifficulty.HARD -> 5 // Corresponds to 4x5 grid defined in GameDifficulty
+                GameDifficulty.HARD -> 5
             }
             val columnCount = gameState.difficulty.gridSize.first
             val spacing = 8.dp
             val cardAspectRatio = 0.75f
 
-            // Calculate height constraint from available vertical space
             val totalVerticalSpacing = spacing * (gridRows + 1)
             val heightFromVerticalConstraint = (this.maxHeight - totalVerticalSpacing) / gridRows
 
-            // Calculate height constraint from available horizontal space (per column)
             val totalHorizontalSpacing = spacing * (columnCount + 1)
             val cellWidth = (this.maxWidth - totalHorizontalSpacing) / columnCount
             val heightFromHorizontalConstraint = cellWidth / cardAspectRatio
 
-            // Final card height is the minimum of the two constraints to fit the cell perfectly
             val finalCardHeight = min(heightFromVerticalConstraint.value, heightFromHorizontalConstraint.value).dp
 
             LazyVerticalGrid(
@@ -113,21 +102,20 @@ fun GameScreen(
                 horizontalArrangement = Arrangement.spacedBy(spacing),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(this.maxHeight) // Use full height provided by BoxWithConstraints
+                    .height(this.maxHeight)
             ) {
                 items(gameState.cards) { card ->
                     MemoryCard(
                         card = card,
                         onCardClick = { cardId -> gameManager.flipCard(cardId) },
                         modifier = Modifier
-                            .height(finalCardHeight.coerceAtMost(120.dp)) // Coerce as a safeguard
+                            .height(finalCardHeight.coerceAtMost(120.dp))
                             .aspectRatio(cardAspectRatio)
                     )
                 }
             }
         }
 
-        // Control Buttons
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -143,12 +131,12 @@ fun GameScreen(
             }
         }
 
-        // Game Complete Dialog
         if (gameState.isGameComplete) {
             GameCompleteDialog(
                 moves = gameState.moves,
                 isNewBestScore = gameState.moves == gameState.bestScore,
-                onPlayAgain = { gameManager.resetGame() }
+                onPlayAgain = { gameManager.resetGame() },
+                onDismiss = { gameManager.dismissGameCompleteDialog() } // Added onDismiss
             )
         }
     }
@@ -157,17 +145,17 @@ fun GameScreen(
 @Composable
 private fun StatCard(label: String, value: String, modifier: Modifier = Modifier, isTertiary: Boolean = false) {
     Card(
-        modifier = modifier.padding(4.dp), // Modifier from call site includes .weight(1f) and .fillMaxHeight()
+        modifier = modifier.padding(4.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isTertiary) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer
         )
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize() // Fill the Card, which has been given a specific size by the Row
+                .fillMaxSize()
                 .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center // Center content vertically within the card
+            verticalArrangement = Arrangement.Center
         ) {
             Text(text = label, fontSize = 14.sp, fontWeight = FontWeight.Medium)
             Text(
@@ -181,9 +169,14 @@ private fun StatCard(label: String, value: String, modifier: Modifier = Modifier
 }
 
 @Composable
-private fun GameCompleteDialog(moves: Int, isNewBestScore: Boolean, onPlayAgain: () -> Unit) {
+private fun GameCompleteDialog(
+    moves: Int, 
+    isNewBestScore: Boolean, 
+    onPlayAgain: () -> Unit,
+    onDismiss: () -> Unit // Added onDismiss parameter
+) {
     AlertDialog(
-        onDismissRequest = { /* Prevent dismissal by clicking outside */ },
+        onDismissRequest = onDismiss, // Call onDismiss when clicking outside or back button
         title = {
             Text(
                 text = "Congratulations! 🎉",
@@ -215,6 +208,11 @@ private fun GameCompleteDialog(moves: Int, isNewBestScore: Boolean, onPlayAgain:
         confirmButton = {
             Button(onClick = onPlayAgain, modifier = Modifier.fillMaxWidth()) {
                 Text("Play Again")
+            }
+        },
+        dismissButton = { // Added dismiss button
+            TextButton(onClick = onDismiss) {
+                Text("Dismiss")
             }
         }
     )

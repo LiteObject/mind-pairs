@@ -6,7 +6,7 @@ import com.example.mindpairs.model.GameState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel // Added import
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,14 +17,12 @@ class GameManager {
     private val _gameState = MutableStateFlow(GameState())
     val gameState: StateFlow<GameState> = _gameState.asStateFlow()
 
-    // Proper coroutine scope with SupervisorJob for better lifecycle management
     private val gameScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
-    // Nostalgic themed images for older adults
     private val cardImages = listOf(
         "🌹", "🌻", "🌷", "🌺", "🍎", "🍊", "🍇", "🍓",
-        "🚗", "📻", "☎️", "📷", "🎵", "🏠", "⭐", "🌙",
-        "🎂", "☕", "🍯", "🕊️"
+        "🚗", "🌿", "☎️", "⚽", "🦆", "🏠", "⭐", "🌙",
+        "🎂", "☕", "🐰", "🦜"
     )
 
     fun startNewGame(difficulty: GameDifficulty) {
@@ -32,7 +30,6 @@ class GameManager {
         val pairs = totalCards / 2
 
         val selectedImages = cardImages.take(pairs)
-        // More efficient card creation with proper ID generation
         val cardPairs = selectedImages.flatMapIndexed { index, image ->
             listOf(
                 Card(id = index * 2, imageRes = image),
@@ -43,7 +40,7 @@ class GameManager {
         _gameState.value = GameState(
             cards = cardPairs,
             difficulty = difficulty,
-            bestScore = _gameState.value.bestScore
+            bestScore = _gameState.value.bestScore // Preserve best score
         )
     }
 
@@ -126,12 +123,9 @@ class GameManager {
         flippedCards: List<Card>,
         newMoves: Int
     ) {
-        // Use the proper game scope instead of creating new CoroutineScope
         gameScope.launch {
-            delay(1000) // Show cards for 1 second
-
-            // Safely get the current state again after delay
-            val latestState = _gameState.value
+            delay(1000)
+            val latestState = _gameState.value // Get latest state after delay
             val updatedCards = latestState.cards.map { card ->
                 if (flippedCards.any { it.id == card.id }) {
                     card.copy(isFlipped = false)
@@ -139,7 +133,6 @@ class GameManager {
                     card
                 }
             }
-
             _gameState.value = latestState.copy(
                 cards = updatedCards,
                 flippedCards = emptyList(),
@@ -152,8 +145,11 @@ class GameManager {
         startNewGame(_gameState.value.difficulty)
     }
 
-    // Clean up resources when GameManager is no longer needed
+    fun dismissGameCompleteDialog() {
+        _gameState.value = _gameState.value.copy(isGameComplete = false)
+    }
+
     fun cleanup() {
-        gameScope.cancel() // Corrected way to cancel the scope
+        gameScope.cancel()
     }
 }
