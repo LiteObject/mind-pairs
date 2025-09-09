@@ -136,7 +136,7 @@ fun GameScreen(
                 moves = gameState.moves,
                 isNewBestScore = gameState.moves == gameState.bestScore,
                 onPlayAgain = { gameManager.resetGame() },
-                onDismiss = { gameManager.dismissGameCompleteDialog() } // Added onDismiss
+                onDismiss = { gameManager.dismissGameCompleteDialog() }
             )
         }
     }
@@ -173,13 +173,13 @@ private fun GameCompleteDialog(
     moves: Int, 
     isNewBestScore: Boolean, 
     onPlayAgain: () -> Unit,
-    onDismiss: () -> Unit // Added onDismiss parameter
+    onDismiss: () -> Unit
 ) {
     AlertDialog(
-        onDismissRequest = onDismiss, // Call onDismiss when clicking outside or back button
+        onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Congratulations! 🎉",
+                text = "Congratulations!",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -196,7 +196,7 @@ private fun GameCompleteDialog(
                 )
                 if (isNewBestScore) {
                     Text(
-                        text = "🏆 New Best Score! 🏆",
+                        text = "New Best Score!",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -210,8 +210,12 @@ private fun GameCompleteDialog(
                 Text("Play Again")
             }
         },
-        dismissButton = { // Added dismiss button
-            TextButton(onClick = onDismiss) {
+        dismissButton = { 
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                 Text("Dismiss")
             }
         }

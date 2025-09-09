@@ -12,7 +12,7 @@ val PurpleGrey40 = Color(0xFF5E35B1)
 val Pink40 = Color(0xFFD32F2F)
 
 // Teal colors for buttons (from colors.xml)
-val Teal200 = Color(0xFF03DAC5)
+val Teal200 = Color(0xFF00BCD4)
 val Teal700 = Color(0xFF018786)
 
 // Additional accessible colors
