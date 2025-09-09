@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import com.example.mindpairs.data.UserPreferencesRepository
 import com.example.mindpairs.game.GameManager
 import com.example.mindpairs.ui.screens.GameScreen
 import com.example.mindpairs.ui.theme.MindPairsTheme
@@ -19,7 +21,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MindPairsTheme {
-                val gameManager = remember { GameManager() }
+                val context = LocalContext.current
+                val userPreferencesRepository = remember { UserPreferencesRepository(context) }
+                val gameManager = remember { GameManager(userPreferencesRepository) }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     GameScreen(

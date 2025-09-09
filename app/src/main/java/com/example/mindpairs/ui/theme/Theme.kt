@@ -19,7 +19,7 @@ import androidx.core.view.WindowCompat
 // Accessible color schemes for older adults
 private val DarkColorScheme = darkColorScheme(
     primary = Teal200,
-    secondary = SoftGreen,
+    secondary = Teal200,
     tertiary = WarmOrange,
     background = Color(0xFF121212),
     surface = Color(0xFF1E1E1E),
@@ -32,7 +32,7 @@ private val DarkColorScheme = darkColorScheme(
 
 private val LightColorScheme = lightColorScheme(
     primary = Teal700,
-    secondary = SoftGreen,
+    secondary = Teal200,
     tertiary = WarmOrange,
     background = Color(0xFFFFFBFE),
     surface = CardBackground,

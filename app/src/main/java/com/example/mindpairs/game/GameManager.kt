@@ -1,5 +1,6 @@
 package com.example.mindpairs.game
 
+import com.example.mindpairs.data.UserPreferencesRepository
 import com.example.mindpairs.model.Card
 import com.example.mindpairs.model.GameDifficulty
 import com.example.mindpairs.model.GameState
@@ -11,12 +12,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
-class GameManager {
+class GameManager(
+    private val userPreferencesRepository: UserPreferencesRepository
+) {
     private val _gameState = MutableStateFlow(GameState())
     val gameState: StateFlow<GameState> = _gameState.asStateFlow()
 
+    // Proper coroutine scope with SupervisorJob for better lifecycle management
     private val gameScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     private val cardImages = listOf(
@@ -25,11 +30,38 @@ class GameManager {
         "🎂", "☕", "🐰", "🦜"
     )
 
-    fun startNewGame(difficulty: GameDifficulty) {
+    init {
+        // Observe saved preferences and update game state accordingly
+        gameScope.launch {
+            combine(
+                userPreferencesRepository.selectedDifficulty,
+                userPreferencesRepository.bestScores
+            ) { difficulty, bestScores ->
+                val currentBestScore = bestScores[difficulty] ?: Int.MAX_VALUE
+                val currentState = _gameState.value
+
+                // Only update if this is initial load or user changed difficulty
+                if (currentState.cards.isEmpty() || currentState.difficulty != difficulty) {
+                    startNewGame(difficulty, currentBestScore)
+                } else {
+                    // Just update the best score if difficulty hasn't changed
+                    _gameState.value = currentState.copy(bestScore = currentBestScore)
+                }
+            }.collect { }
+        }
+    }
+
+    fun startNewGame(difficulty: GameDifficulty, bestScore: Int = Int.MAX_VALUE) {
+        gameScope.launch {
+            // Save the selected difficulty to DataStore
+            userPreferencesRepository.saveDifficulty(difficulty)
+        }
+
         val totalCards = difficulty.gridSize.first * difficulty.gridSize.second
         val pairs = totalCards / 2
 
         val selectedImages = cardImages.take(pairs)
+        // More efficient card creation with proper ID generation
         val cardPairs = selectedImages.flatMapIndexed { index, image ->
             listOf(
                 Card(id = index * 2, imageRes = image),
@@ -40,7 +72,7 @@ class GameManager {
         _gameState.value = GameState(
             cards = cardPairs,
             difficulty = difficulty,
-            bestScore = _gameState.value.bestScore // Preserve best score
+            bestScore = bestScore
         )
     }
 
@@ -103,6 +135,10 @@ class GameManager {
         val isGameComplete = newMatchedPairs == totalPairs
 
         val newBestScore = if (isGameComplete && newMoves < currentState.bestScore) {
+            // Save new best score to DataStore
+            gameScope.launch {
+                userPreferencesRepository.saveBestScore(currentState.difficulty, newMoves)
+            }
             newMoves
         } else {
             currentState.bestScore
@@ -142,13 +178,14 @@ class GameManager {
     }
 
     fun resetGame() {
-        startNewGame(_gameState.value.difficulty)
+        startNewGame(_gameState.value.difficulty, _gameState.value.bestScore)
     }
 
     fun dismissGameCompleteDialog() {
         _gameState.value = _gameState.value.copy(isGameComplete = false)
     }
 
+    // Clean up resources when GameManager is no longer needed
     fun cleanup() {
         gameScope.cancel()
     }
