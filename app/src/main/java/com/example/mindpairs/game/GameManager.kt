@@ -16,13 +16,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class GameManager(
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val coroutineScope: CoroutineScope // Added coroutineScope to constructor
 ) {
     private val _gameState = MutableStateFlow(GameState())
     val gameState: StateFlow<GameState> = _gameState.asStateFlow()
 
-    // Proper coroutine scope with SupervisorJob for better lifecycle management
-    private val gameScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    // Removed internal gameScope, will use injected coroutineScope
 
     private val cardImages = listOf(
         "🌹", "🌻", "🌷", "🌺", "🍎", "🍊", "🍇", "🍓",
@@ -32,7 +32,7 @@ class GameManager(
 
     init {
         // Observe saved preferences and update game state accordingly
-        gameScope.launch {
+        coroutineScope.launch { // Use injected coroutineScope
             combine(
                 userPreferencesRepository.selectedDifficulty,
                 userPreferencesRepository.bestScores
@@ -40,28 +40,20 @@ class GameManager(
                 val currentBestScore = bestScores[difficulty] ?: Int.MAX_VALUE
                 val currentState = _gameState.value
 
-                // Only update if this is initial load or user changed difficulty
                 if (currentState.cards.isEmpty() || currentState.difficulty != difficulty) {
-                    startNewGame(difficulty, currentBestScore)
+                    startNewGameInternal(difficulty, currentBestScore) // Changed to internal call
                 } else {
-                    // Just update the best score if difficulty hasn't changed
                     _gameState.value = currentState.copy(bestScore = currentBestScore)
                 }
             }.collect { }
         }
     }
 
-    fun startNewGame(difficulty: GameDifficulty, bestScore: Int = Int.MAX_VALUE) {
-        gameScope.launch {
-            // Save the selected difficulty to DataStore
-            userPreferencesRepository.saveDifficulty(difficulty)
-        }
-
+    // Internal function to set up game state without triggering preference save
+    private fun startNewGameInternal(difficulty: GameDifficulty, bestScore: Int) {
         val totalCards = difficulty.gridSize.first * difficulty.gridSize.second
         val pairs = totalCards / 2
-
         val selectedImages = cardImages.take(pairs)
-        // More efficient card creation with proper ID generation
         val cardPairs = selectedImages.flatMapIndexed { index, image ->
             listOf(
                 Card(id = index * 2, imageRes = image),
@@ -74,6 +66,15 @@ class GameManager(
             difficulty = difficulty,
             bestScore = bestScore
         )
+    }
+
+    // Public function to start a new game, also saves preference
+    fun startNewGame(difficulty: GameDifficulty) {
+        coroutineScope.launch { // Use injected coroutineScope
+            userPreferencesRepository.saveDifficulty(difficulty)
+        }
+        // Best score will be loaded by the init block's combine or preserved from current state
+        startNewGameInternal(difficulty, _gameState.value.bestScore)
     }
 
     fun flipCard(cardId: Int) {
@@ -135,8 +136,7 @@ class GameManager(
         val isGameComplete = newMatchedPairs == totalPairs
 
         val newBestScore = if (isGameComplete && newMoves < currentState.bestScore) {
-            // Save new best score to DataStore
-            gameScope.launch {
+            coroutineScope.launch { // Use injected coroutineScope
                 userPreferencesRepository.saveBestScore(currentState.difficulty, newMoves)
             }
             newMoves
@@ -159,9 +159,9 @@ class GameManager(
         flippedCards: List<Card>,
         newMoves: Int
     ) {
-        gameScope.launch {
+        coroutineScope.launch { // Use injected coroutineScope
             delay(1000)
-            val latestState = _gameState.value // Get latest state after delay
+            val latestState = _gameState.value
             val updatedCards = latestState.cards.map { card ->
                 if (flippedCards.any { it.id == card.id }) {
                     card.copy(isFlipped = false)
@@ -178,15 +178,17 @@ class GameManager(
     }
 
     fun resetGame() {
-        startNewGame(_gameState.value.difficulty, _gameState.value.bestScore)
+        // When resetting, use the current difficulty and its associated best score.
+        // The init block's combine should ensure bestScore is up-to-date for the current difficulty.
+        startNewGameInternal(_gameState.value.difficulty, _gameState.value.bestScore)
     }
 
     fun dismissGameCompleteDialog() {
         _gameState.value = _gameState.value.copy(isGameComplete = false)
     }
 
-    // Clean up resources when GameManager is no longer needed
     fun cleanup() {
-        gameScope.cancel()
+        coroutineScope.cancel() // Cancel the injected scope if GameManager is managing its lifecycle.
+                               // Note: If scope is from viewModelScope or lifecycleScope, it's auto-managed.
     }
 }
