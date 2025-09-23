@@ -13,11 +13,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up JDK 11
+    - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
-        java-version: '11' # Or the JDK version your project requires (e.g., '17')
-        distribution: 'temurin'
+        java-version: '17' # Updated to Java 17 for Android Gradle Plugin 8.13.0 compatibility
+        distribution: 'temurin' # Using temurin for better compatibility
         cache: gradle
 
     - name: Grant execute permission for gradlew
@@ -44,14 +44,18 @@ jobs:
           -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
 
     - name: Upload AAB to Google Play (Internal Track)
-      uses: r0adkll/upload-google-play@v1.1.2 # Or the latest version of this action
+      uses: r0adkll/upload-google-play@v1.1.2
       with:
         serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON_KEY }}
-        packageName: com.example.mindpairs # <-- IMPORTANT: Replace with your actual package name
+        packageName: com.example.mindpairs # Updated to match your actual package name
         releaseFiles: app/build/outputs/bundle/release/app-release.aab
         track: internal
+        status: completed # Set status to completed for automatic deployment
         # Optional: You can specify what percentage of users get this rollout
         # userFraction: 0.5 # Deploys to 50% of users on the track
         # Optional: Add release notes
         # whatsNewDirectory: path/to/your/release_notes/
-        # status: completed # Can be 'completed', 'inProgress', or 'draft'
+
+    - name: Clean up keystore
+      if: always()
+      run: rm -f ${{ github.workspace }}/app/release-keystore.jks
