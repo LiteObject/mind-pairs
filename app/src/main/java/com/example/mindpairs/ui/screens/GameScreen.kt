@@ -67,9 +67,9 @@ fun GameScreen(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             StatCard(label = "Moves", value = "${gameState.moves}", modifier = Modifier.weight(1f).fillMaxHeight())
-            StatCard(label = "Pairs Found", value = "${gameState.matchedPairs}", modifier = Modifier.weight(1f).fillMaxHeight())
+            StatCard(label = "Found", value = "${gameState.matchedPairs}", modifier = Modifier.weight(1f).fillMaxHeight())
             if (gameState.bestScore != Int.MAX_VALUE) {
-                StatCard(label = "Best Score", value = "${gameState.bestScore}", modifier = Modifier.weight(1f).fillMaxHeight(), isTertiary = true)
+                StatCard(label = "Best", value = "${gameState.bestScore}", modifier = Modifier.weight(1f).fillMaxHeight(), isTertiary = true)
             }
         }
 
