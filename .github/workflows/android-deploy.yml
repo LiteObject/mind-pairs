@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master # Trigger deployment on pushes to the master branch
+  workflow_dispatch: # Allow manual triggering
 
 jobs:
   build-and-deploy:
@@ -16,12 +17,35 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '17' # Updated to Java 17 for Android Gradle Plugin 8.13.0 compatibility
-          distribution: 'temurin' # Using temurin for better compatibility
+          java-version: '17'
+          distribution: 'temurin'
           cache: gradle
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
+
+      - name: Validate secrets
+        run: |
+          if [ -z "${{ secrets.KEYSTORE_FILE }}" ]; then
+            echo "Error: KEYSTORE_FILE secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.KEYSTORE_PASSWORD }}" ]; then
+            echo "Error: KEYSTORE_PASSWORD secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.KEY_ALIAS }}" ]; then
+            echo "Error: KEY_ALIAS secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.KEY_PASSWORD }}" ]; then
+            echo "Error: KEY_PASSWORD secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SERVICE_ACCOUNT_JSON }}" ]; then
+            echo "Error: SERVICE_ACCOUNT_JSON secret is not set"
+            exit 1
+          fi
 
       - name: Decode Keystore
         id: decode_keystore
@@ -30,6 +54,18 @@ jobs:
         run: |
           echo $KEYSTORE_FILE | base64 --decode > ${{ github.workspace }}/app/release-keystore.jks
           echo "STORE_FILE_PATH=${{ github.workspace }}/app/release-keystore.jks" >> $GITHUB_ENV
+
+      - name: Verify keystore
+        run: |
+          if [ ! -f "${{ env.STORE_FILE_PATH }}" ]; then
+            echo "Error: Keystore file was not created successfully"
+            exit 1
+          fi
+          # Test keystore validity
+          keytool -list -keystore "${{ env.STORE_FILE_PATH }}" -storepass "${{ secrets.KEYSTORE_PASSWORD }}" -alias "${{ secrets.KEY_ALIAS }}" || {
+            echo "Error: Unable to access keystore or key alias"
+            exit 1
+          }
 
       - name: Build Release AAB
         env:
@@ -43,16 +79,24 @@ jobs:
             -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
 
+      - name: Verify AAB was created
+        run: |
+          if [ ! -f "app/build/outputs/bundle/release/app-release.aab" ]; then
+            echo "Error: AAB file was not created"
+            exit 1
+          fi
+          echo "AAB file created successfully"
+          ls -la app/build/outputs/bundle/release/
+
       - name: Upload AAB to Google Play (Internal Track)
-        uses: r0adkll/upload-google-play@v1.1.2
+        uses: r0adkll/upload-google-play@v1.1.3
         with:
           serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
-          packageName: com.example.mindpairs # Replace with your actual package name
+          packageName: com.liteobject.mindpairs
           releaseFiles: app/build/outputs/bundle/release/app-release.aab
           track: internal
-          status: completed # Set status to completed for automatic deployment
-          # Optional: You can specify what percentage of users get this rollout
-          # userFraction: 0.5 # Deploys to 50% of users on the track
+          status: completed
+          inAppUpdatePriority: 2
           # Optional: Add release notes
           # whatsNewDirectory: path/to/your/release_notes/
 

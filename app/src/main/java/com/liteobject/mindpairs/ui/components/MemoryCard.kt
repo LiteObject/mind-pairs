@@ -1,4 +1,4 @@
-package com.example.mindpairs.ui.components
+package com.liteobject.mindpairs.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.mindpairs.model.Card as GameCard
+import com.liteobject.mindpairs.model.Card as GameCard
 
 @Composable
 fun MemoryCard(

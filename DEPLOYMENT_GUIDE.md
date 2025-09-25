@@ -1,7 +1,7 @@
 # Google Play Deployment Guide
 
 ## The Issue
-The error "Package not found: com.example.mindpairs" occurs because Google Play Console requires the first release of any app to be uploaded manually through the web interface. Automated uploads via GitHub Actions only work for subsequent releases.
+The error "Package not found: com.liteobject.mindpairs" occurs because Google Play Console requires the first release of any app to be uploaded manually through the web interface. Automated uploads via GitHub Actions only work for subsequent releases.
 
 ## Solution Steps
 
@@ -43,7 +43,7 @@ In your GitHub repository settings, add these secrets:
 After the manual upload is successful, your GitHub Actions workflow will work for subsequent releases.
 
 ## Important Notes
-- The package name `com.example.mindpairs` in your app must match exactly in Google Play Console
+- The package name `com.liteobject.mindpairs` in your app must match exactly in Google Play Console
 - Keep your keystore file safe - you cannot update your app without it
 - The first upload must always be done manually through the web interface
 - Service account must have "Release Manager" role in Google Play Console

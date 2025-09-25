@@ -1,4 +1,4 @@
-package com.example.mindpairs
+package com.liteobject.mindpairs
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -26,11 +26,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.mindpairs.data.UserPreferencesRepository
-import com.example.mindpairs.game.GameManager
-import com.example.mindpairs.ui.screens.AboutScreen // Uncommented AboutScreen import
-import com.example.mindpairs.ui.screens.GameScreen
-import com.example.mindpairs.ui.theme.MindPairsTheme
+import com.liteobject.mindpairs.data.UserPreferencesRepository
+import com.liteobject.mindpairs.game.GameManager
+import com.liteobject.mindpairs.ui.screens.AboutScreen
+import com.liteobject.mindpairs.ui.screens.GameScreen
+import com.liteobject.mindpairs.ui.theme.MindPairsTheme
 
 object Routes {
     const val GAME = "game"
@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
                 val coroutineScope = rememberCoroutineScope()
                 val userPreferencesRepository = remember { UserPreferencesRepository(context) }
                 val gameManager = remember { GameManager(userPreferencesRepository, coroutineScope) }
-                
+
                 val navController = rememberNavController()
 
                 Scaffold(
@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(Routes.ABOUT) {
-                            AboutScreen() // Using actual AboutScreen
+                            AboutScreen()
                         }
                     }
                 }

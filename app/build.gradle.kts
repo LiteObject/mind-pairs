@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.mindpairs"
+    namespace = "com.liteobject.mindpairs"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.mindpairs"
+        applicationId = "com.liteobject.mindpairs"
         minSdk = 30
         targetSdk = 36
         versionCode = 1

@@ -1,4 +1,4 @@
-package com.example.mindpairs.model
+package com.liteobject.mindpairs.model
 
 data class Card(
     val id: Int,

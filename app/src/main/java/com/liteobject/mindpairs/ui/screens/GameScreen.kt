@@ -1,8 +1,8 @@
-package com.example.mindpairs.ui.screens
+package com.liteobject.mindpairs.ui.screens
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.* // Includes statusBarsPadding, IntrinsicSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -16,9 +16,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.mindpairs.game.GameManager
-import com.example.mindpairs.model.GameDifficulty
-import com.example.mindpairs.ui.components.MemoryCard
+import com.liteobject.mindpairs.game.GameManager
+import com.liteobject.mindpairs.model.GameDifficulty
+import com.liteobject.mindpairs.ui.components.MemoryCard
 import kotlin.math.min
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
@@ -171,8 +171,8 @@ private fun StatCard(label: String, value: String, modifier: Modifier = Modifier
 
 @Composable
 private fun GameCompleteDialog(
-    moves: Int, 
-    isNewBestScore: Boolean, 
+    moves: Int,
+    isNewBestScore: Boolean,
     onPlayAgain: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -211,7 +211,7 @@ private fun GameCompleteDialog(
                 Text("Play Again")
             }
         },
-        dismissButton = { 
+        dismissButton = {
             Button(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),

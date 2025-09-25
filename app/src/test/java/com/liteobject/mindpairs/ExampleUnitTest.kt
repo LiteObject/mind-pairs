@@ -1,4 +1,4 @@
-package com.example.mindpairs
+package com.liteobject.mindpairs
 
 import org.junit.Test
 

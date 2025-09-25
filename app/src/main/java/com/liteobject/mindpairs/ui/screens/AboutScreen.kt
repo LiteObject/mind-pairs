@@ -1,4 +1,4 @@
-package com.example.mindpairs.ui.screens
+package com.liteobject.mindpairs.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun AboutScreen(
-    // navController: NavHostController // Not strictly needed if TopAppBar handles back
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -30,7 +29,7 @@ fun AboutScreen(
             modifier = Modifier.padding(bottom = 16.dp)
         )
         Text(
-            text = "Version 1.0", // You can update this as needed
+            text = "Version 1.0",
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(bottom = 8.dp)
         )
@@ -40,8 +39,5 @@ fun AboutScreen(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 8.dp)
         )
-        // Add any other information you want to display here
-        // e.g., Text("Created by: Your Name")
-        //      Text("© 2024 Your Company")
     }
 }

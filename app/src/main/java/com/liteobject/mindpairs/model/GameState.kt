@@ -1,7 +1,7 @@
-package com.example.mindpairs.model
+package com.liteobject.mindpairs.model
 
 enum class GameDifficulty(val gridSize: Pair<Int, Int>, val displayName: String) {
-    EASY(Pair(4, 2), "Easy (8 cards)"), // Updated to 4 columns, 3 rows
+    EASY(Pair(4, 2), "Easy (8 cards)"),
     MEDIUM(Pair(4, 3), "Medium (12 cards)"),
     HARD(Pair(4, 4), "Hard (16 cards)")
 }

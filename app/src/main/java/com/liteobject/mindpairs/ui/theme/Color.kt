@@ -1,4 +1,4 @@
-package com.example.mindpairs.ui.theme
+package com.liteobject.mindpairs.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
