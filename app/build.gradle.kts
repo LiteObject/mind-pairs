@@ -49,8 +49,10 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.core) // Added Material Icons Core
+    implementation(libs.androidx.compose.material.icons.extended) // Added Material Icons Extended
     implementation(libs.androidx.datastore.preferences)
-    implementation(libs.androidx.navigation.compose) // Added Navigation Compose
+    implementation(libs.androidx.navigation.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
