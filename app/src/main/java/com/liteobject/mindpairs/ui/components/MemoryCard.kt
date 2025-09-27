@@ -64,7 +64,7 @@ fun MemoryCard(
                 )
                 .border(
                     width = 2.dp,
-                    color = if (card.isMatched) Color.Green else Color.Transparent,
+                    color = if (card.isMatched) Color.Cyan else Color.Transparent,
                     shape = RoundedCornerShape(16.dp)
                 ),
             contentAlignment = Alignment.Center

@@ -18,8 +18,8 @@ import androidx.core.view.WindowCompat
 
 // Accessible color schemes for older adults
 private val DarkColorScheme = darkColorScheme(
-    primary = Teal200,
-    secondary = Teal200,
+    primary = Teal700,
+    secondary = Teal700,
     tertiary = WarmOrange,
     background = Color(0xFF121212),
     surface = Color(0xFF1E1E1E),
@@ -31,7 +31,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Teal700,
+    primary =Teal700,
     secondary = Teal200,
     tertiary = WarmOrange,
     background = Color(0xFFFFFBFE),
@@ -41,7 +41,7 @@ private val LightColorScheme = lightColorScheme(
     onTertiary = Color.White,
     onBackground = HighContrastText,
     onSurface = HighContrastText,
-    primaryContainer = Teal200,
+    primaryContainer = Teal700,
     secondaryContainer = Color(0xFFE8F5E8),
     tertiaryContainer = Color(0xFFFFF3E0)
 )
@@ -66,8 +66,8 @@ fun MindPairsTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            // window.statusBarColor = Color.Transparent.toArgb() // Line removed
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme // Corrected logic
         }
     }
 
